@@ -12,7 +12,7 @@ Function: TypeAlias = Callable[[Dict[str, Any]], FunctionResponse]
 
 def lambda_handler(func: Function):
     def _lambda_handler(event: Dict[str, Any], context: Any) -> Any:
-        logger: logging.Logger = get_logger()()
+        logger: logging.Logger = get_logger()
         request_body: dict[str, Any] | None = None
         if event.get("body") is not None:
             request_body = json.loads(event["body"])
