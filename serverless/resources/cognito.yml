@@ -1,0 +1,103 @@
+# cognito.yml
+Resources:
+  # User Poolの設定
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: ${self:custom.prefix}-UserPool
+      MfaConfiguration: OFF
+      UsernameAttributes:
+        - email # ユーザー名として email を使用
+      AutoVerifiedAttributes:
+        - email # email を自動検証
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: ${self:custom.prefix}
+      UserPoolId:
+        Ref: UserPool
+
+  UserPoolIdentityProviderGoogle:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      ProviderName: Google
+      UserPoolId:
+        Ref: UserPool
+      ProviderType: Google
+      ProviderDetails:
+        client_id: ${env:GOOGLE_CLIENT_ID}
+        client_secret: ${env:GOOGLE_CLIENT_SECRET}
+        authorize_scopes: "openid email profile"
+      AttributeMapping:
+        email: email # Google の email を Cognito の email にマッピング
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: ${self:custom.prefix}-UserPoolClient
+      UserPoolId:
+        Ref: UserPool
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      CallbackURLs:
+        - !Sub
+          - "https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}/oauth/google/callback"
+          - ApiGatewayRestApi:
+              Ref: ApiGatewayRestApi
+      LogoutURLs:
+        - https://${env:DOMAIN}/login
+      SupportedIdentityProviders:
+        - Google
+    DependsOn:
+      - UserPoolIdentityProviderGoogle
+
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: ${self:custom.prefix}-IdentityPool
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId:
+            Ref: UserPoolClient
+          ProviderName:
+            Fn::GetAtt:
+              - UserPool
+              - ProviderName
+
+  IdentityPoolRoleAttachment:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId:
+        Ref: IdentityPool
+      Roles:
+        authenticated:
+          Fn::GetAtt:
+            - IdentityPoolAuthRole
+            - Arn
+        unauthenticated:
+          Fn::GetAtt:
+            - IdentityPoolUnauthRole
+            - Arn
+
+Outputs:
+  UserPoolId:
+    Value:
+      Ref: UserPool
+    Export:
+      Name: ${self:custom.prefix}-UserPoolId
+  UserPoolClientId:
+    Value:
+      Ref: UserPoolClient
+    Export:
+      Name: ${self:custom.prefix}-UserPoolClientId
+  IdentityPoolId:
+    Value:
+      Ref: IdentityPool
+    Export:
+      Name: ${self:custom.prefix}-IdentityPoolId

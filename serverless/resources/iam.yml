@@ -1,0 +1,93 @@
+# iam.yml
+Resources:
+  LambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: ${self:custom.prefix}-LambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: CloudWatchExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+        - PolicyName: DynamoDBExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "dynamodb:PutItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:DeleteItem"
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*"
+
+  IdentityPoolAuthRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: ${self:custom.prefix}-IdentityPoolAuthRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                "cognito-identity.amazonaws.com:aud":
+                  Ref: IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": authenticated
+
+  IdentityPoolUnauthRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: ${self:custom.prefix}-IdentityPoolUnauthRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                "cognito-identity.amazonaws.com:aud":
+                  Ref: IdentityPool
+              "ForAnyValue:StringLike":
+                "cognito-identity.amazonaws.com:amr": unauthenticated
+
+  # guildAdminRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     Path: /
+  #     RoleName: ${self:custom.guildAdminRole}
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Effect: Allow
+  #           Action:
+  #             - sts:AssumeRoleWithWebIdentity
+  #           Principal:
+  #             Federated: cognito-identity.amazonaws.com
+  #           Condition:
+  #             StringEquals:
+  #               cognito-identity.amazonaws.com:aud:
+  #                 Ref: IdentityPool
+  #             ForAnyValue:StringLike:
+  #               cognito-identity.amazonaws.com:amr: authenticated

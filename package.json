@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "serverless-layers": "^2.7.0"
+  }
+}
