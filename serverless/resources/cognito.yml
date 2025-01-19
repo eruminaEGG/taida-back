@@ -1,4 +1,3 @@
-# cognito.yml
 Resources:
   # User Poolの設定
   UserPool:
@@ -46,12 +45,9 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - !Sub
-          - "https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}/oauth/google/callback"
-          - ApiGatewayRestApi:
-              Ref: ApiGatewayRestApi
+        - http://${env:DOMAIN}/login/callback
       LogoutURLs:
-        - https://${env:DOMAIN}/login
+        - http://${env:DOMAIN}/login
       SupportedIdentityProviders:
         - Google
     DependsOn:
