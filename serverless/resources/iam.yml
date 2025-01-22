@@ -12,7 +12,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: "sts:AssumeRole"
       Policies:
-        - PolicyName: CloudWatchExecutionPolicy
+        - PolicyName: ${self:custom.prefix}-CloudWatchExecutionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -22,7 +22,7 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-        - PolicyName: DynamoDBExecutionPolicy
+        - PolicyName: ${self:custom.prefix}-DynamoDBExecutionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -72,22 +72,33 @@ Resources:
               "ForAnyValue:StringLike":
                 "cognito-identity.amazonaws.com:amr": unauthenticated
 
-  # guildAdminRole:
-  #   Type: AWS::IAM::Role
-  #   Properties:
-  #     Path: /
-  #     RoleName: ${self:custom.guildAdminRole}
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Effect: Allow
-  #           Action:
-  #             - sts:AssumeRoleWithWebIdentity
-  #           Principal:
-  #             Federated: cognito-identity.amazonaws.com
-  #           Condition:
-  #             StringEquals:
-  #               cognito-identity.amazonaws.com:aud:
-  #                 Ref: IdentityPool
-  #             ForAnyValue:StringLike:
-  #               cognito-identity.amazonaws.com:amr: authenticated
+  GeneralUserRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      RoleName: ${self:custom.generalUserRole}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud:
+                  Ref: IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
+      Policies:
+        - PolicyName: ${self:custom.prefix}-LambdaInvokePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - execute-api:Invoke
+                Resource:
+                  - Fn::Sub: ${self:custom.executeApiArn}/GET/
+                  - Fn::Sub: ${self:custom.executeApiArn}/*/*

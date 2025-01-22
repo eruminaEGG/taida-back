@@ -1,3 +1,4 @@
+# functions.yml
 getStatus:
   handler: taida_back/handlers/get_status.exec
   name: ${self:custom.prefix}-getStatus
@@ -6,12 +7,5 @@ getStatus:
         path: /
         method: GET
         cors: true
-
-googleAuthCallback:
-  handler: taida_back/handlers/auth/google_callback.exec
-  name: ${self:custom.prefix}-googleAuthCallback
-  events:
-    - http:
-        path: /oauth/google/callback
-        method: GET
-        cors: true
+        authorizer:
+          type: AWS_IAM

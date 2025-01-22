@@ -9,10 +9,7 @@ provider:
   architecture: arm64
   timeout: 30
   iam:
-    role:
-      Fn::GetAtt:
-        - LambdaExecutionRole
-        - Arn
+    role: LambdaExecutionRole
   layers:
     - Ref: PythonRequirementsLambdaLayer
 
@@ -28,6 +25,11 @@ provider:
 
     USER_TABLE_NAME: ${self:custom.userTableName}
 
+    # Cognito
+    COGNITO_USER_POOL_ID: !Ref UserPool
+    COGNITO_USER_POOL_CLIENT_ID: !Ref UserPoolClient
+    COGNITO_IDENTITY_POOL_ID: !Ref IdentityPool
+
     # Google OAuth
     GOOGLE_CLIENT_ID: ${env:GOOGLE_CLIENT_ID}
     GOOGLE_CLIENT_SECRET: ${env:GOOGLE_CLIENT_SECRET}
@@ -40,7 +42,6 @@ custom:
 
   # API Gateway
   apiName: ${self:custom.prefix}-api
-
   # lambda
   executeApiArn: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/${self:provider.stage}
   pythonRequirements:
@@ -48,7 +49,8 @@ custom:
     layer: true
 
   # Cognito
-  guildAdminRole: ${self:custom.prefix}-GuildAdminRole
+  generalUserGroup: ${self:custom.prefix}-GeneralUserGroup
+  generalUserRole: ${self:custom.prefix}-GeneralUserRole
 
 package:
   include:

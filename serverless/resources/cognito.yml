@@ -1,3 +1,4 @@
+# cognito.yml
 Resources:
   # User Poolの設定
   UserPool:
@@ -6,9 +7,9 @@ Resources:
       UserPoolName: ${self:custom.prefix}-UserPool
       MfaConfiguration: OFF
       UsernameAttributes:
-        - email # ユーザー名として email を使用
+        - email
       AutoVerifiedAttributes:
-        - email # email を自動検証
+        - email
 
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
@@ -29,7 +30,7 @@ Resources:
         client_secret: ${env:GOOGLE_CLIENT_SECRET}
         authorize_scopes: "openid email profile"
       AttributeMapping:
-        email: email # Google の email を Cognito の email にマッピング
+        email: email
 
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -37,9 +38,26 @@ Resources:
       ClientName: ${self:custom.prefix}-UserPoolClient
       UserPoolId:
         Ref: UserPool
+      GenerateSecret: false
+      IdTokenValidity: 1
+      AccessTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        IdToken: hours
+        AccessToken: hours
+        RefreshToken: days
+      EnableTokenRevocation: true
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows:
+        - ALLOW_ADMIN_USER_PASSWORD_AUTH
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows:
         - code
+        - implicit
       AllowedOAuthScopes:
         - openid
         - email
@@ -80,6 +98,26 @@ Resources:
           Fn::GetAtt:
             - IdentityPoolUnauthRole
             - Arn
+      RoleMappings:
+        UserPool:
+          IdentityProvider:
+            Fn::Join:
+              - ":"
+              - - Fn::GetAtt: [UserPool, ProviderName]
+                - Ref: UserPoolClient
+          Type: Token
+          ambiguousRoleResolution: AuthenticatedRole
+
+  GeneralUserGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: ${self:custom.generalUserGroup}
+      UserPoolId:
+        Ref: UserPool
+      RoleArn:
+        Fn::GetAtt:
+          - GeneralUserRole
+          - Arn
 
 Outputs:
   UserPoolId:
