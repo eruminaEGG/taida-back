@@ -5,13 +5,52 @@ Resources:
     Properties:
       TableName: ${self:custom.userTableName}
       AttributeDefinitions:
-        - AttributeName: key
+        - AttributeName: sub
           AttributeType: S
-        - AttributeName: id
+        - AttributeName: createdAt
           AttributeType: S
       KeySchema:
-        - AttributeName: key
+        - AttributeName: sub
           KeyType: HASH
-        - AttributeName: id
+        - AttributeName: createdAt
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
+  SiteTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ${self:custom.siteTableName}
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: createdAt
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+  ArticleTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ${self:custom.articleTableName}
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: siteId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: createdAt
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: site-id-search
+          KeySchema:
+            - AttributeName: siteId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL

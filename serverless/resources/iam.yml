@@ -35,70 +35,22 @@ Resources:
                   - "dynamodb:UpdateItem"
                   - "dynamodb:DeleteItem"
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*"
-
-  IdentityPoolAuthRole:
-    Type: "AWS::IAM::Role"
+  AccessUser:
+    Type: "AWS::IAM::User"
     Properties:
-      RoleName: ${self:custom.prefix}-IdentityPoolAuthRole
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Federated: cognito-identity.amazonaws.com
-            Action: "sts:AssumeRoleWithWebIdentity"
-            Condition:
-              StringEquals:
-                "cognito-identity.amazonaws.com:aud":
-                  Ref: IdentityPool
-              "ForAnyValue:StringLike":
-                "cognito-identity.amazonaws.com:amr": authenticated
-
-  IdentityPoolUnauthRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      RoleName: ${self:custom.prefix}-IdentityPoolUnauthRole
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Federated: cognito-identity.amazonaws.com
-            Action: "sts:AssumeRoleWithWebIdentity"
-            Condition:
-              StringEquals:
-                "cognito-identity.amazonaws.com:aud":
-                  Ref: IdentityPool
-              "ForAnyValue:StringLike":
-                "cognito-identity.amazonaws.com:amr": unauthenticated
-
-  GeneralUserRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Path: /
-      RoleName: ${self:custom.generalUserRole}
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action:
-              - sts:AssumeRoleWithWebIdentity
-            Principal:
-              Federated: cognito-identity.amazonaws.com
-            Condition:
-              StringEquals:
-                cognito-identity.amazonaws.com:aud:
-                  Ref: IdentityPool
-              ForAnyValue:StringLike:
-                cognito-identity.amazonaws.com:amr: authenticated
+      UserName: "${self:custom.prefix}-accessUser"
+      Path: "/"
       Policies:
-        - PolicyName: ${self:custom.prefix}-LambdaInvokePolicy
+        - PolicyName: ${self:custom.prefix}-AccessUserDynamoDBExecutionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: "Allow"
                 Action:
-                  - execute-api:Invoke
-                Resource:
-                  - Fn::Sub: ${self:custom.executeApiArn}/GET/
-                  - Fn::Sub: ${self:custom.executeApiArn}/*/*
+                  - "dynamodb:PutItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:DeleteItem"
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*"
